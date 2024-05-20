@@ -1,17 +1,25 @@
+import frontmatter
+
 from os.path import split, splitext
 
 from mkdocs.structure.files import Files
-from mkdocs.structure.pages import Page
 from mkdocs.config.defaults import MkDocsConfig
 
-def on_page_markdown(markdown: str, page: Page, config: MkDocsConfig, files: Files) -> str | None:
-	dirpath, filename = split(page.file.src_uri)
-	meta_title = page.meta.get('title', None)
+def on_files(files: Files, config: MkDocsConfig) -> Files | None:
+	for file in files:
+		if not file.is_documentation_page():
+			continue
 
-	if meta_title is None:
-		if filename == 'index.md':
-			_, page_title = split(dirpath)
+		post = frontmatter.loads(file.content_string, encoding='utf-8-sig')
+		if post.get('title', None) is not None:
+			continue
+
+		dirpath, filename = split(file.src_uri)
+		filename_no_ext, file_ext = splitext(filename)
+
+		if filename_no_ext == 'index' and file_ext.lower() == '.md':
+			_, post['title'] = split(dirpath)
 		else:
-			page_title, _ = splitext(filename)
+			post['title'] = filename_no_ext
 
-		page.meta['title'] = page_title
+		file.content_string = frontmatter.dumps(post)
