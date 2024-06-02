@@ -1,5 +1,6 @@
 import unicodedata
 import regex
+from urllib.parse import quote
 from os.path import splitext, split, relpath
 
 from mkdocs.structure.pages import Page
@@ -35,19 +36,18 @@ def on_page_markdown(markdown: str, *, page: Page, **_):
 
 
 def get_wikilink_replacement(origin: File, destination_uri: str, text: str | None) -> str:
-	global available_files
-
 	destination_uri, anchor = remove_anchor(destination_uri)
-	destination_file = get_file_from_filepath(destination_uri, origin, available_files)
+	destination_file = get_file_from_filepath(destination_uri, origin)
 
 	if destination_file is not None:
 		destination_uri = destination_file.src_uri
-		href = relpath(destination_uri, origin.src_uri + '/..').replace('\\', '/') + parse_anchor(anchor)
+		href = quote(relpath(destination_uri, origin.src_uri + '/..').replace('\\', '/')) + parse_anchor(anchor)
 
 		page = destination_file.page
 
 		if page is not None:
-			tooltip: str = page.title or ""
+			tooltip: str = page.title or "" # type: ignore
+			# page.title marked as of type 'weak_property | Unknown' instead of 'str | None'
 		else:
 			tooltip = ''
 
@@ -68,7 +68,8 @@ def get_wikilink_replacement(origin: File, destination_uri: str, text: str | Non
 
 		elif page is not None:
 			filename, _ = splitext( split(destination_file.src_uri)[1] )
-			text = page.title or filename
+			text = page.title or filename # type: ignore
+			# page.title marked as of type 'weak_property | Unknown' instead of 'str | None'
 
 
 	if not tooltip or (text and tooltip.lower() == text.lower()):
@@ -85,7 +86,9 @@ def remove_anchor(filepath: str) -> tuple[str, str | None]:
 
 	return filepath[:anchor_start], filepath[anchor_start:]
 
-def get_file_from_filepath(filepath: str, origin: File, files: Files) -> File | None:
+def get_file_from_filepath(filepath: str, origin: File) -> File | None:
+	global available_files
+
 	filepath, _ = remove_anchor(filepath.strip())
 
 	if filepath == "":
@@ -98,7 +101,7 @@ def get_file_from_filepath(filepath: str, origin: File, files: Files) -> File | 
 	filepath_upper = (filepath_no_ext + ext).upper()
 	_, filename_upper = split(filepath_upper)
 
-	for f in files:
+	for f in available_files:
 		f_filename_upper = split(f.src_uri)[1].upper()
 
 		if f_filename_upper == filename_upper and f.src_uri.upper().endswith(filepath_upper):
@@ -114,8 +117,11 @@ def parse_anchor(anchor: str | None) -> str:
 		.encode('ascii', 'ignore') \
 		.decode('utf-8') \
 		.lower() \
+		.replace('(', '') \
+		.replace(')', '') \
 		.replace(' - ', '-') \
-		.replace(' ', '-')
+		.replace(' ', '-') \
+		.replace('--', '-')
 
 	if not parsed.startswith("#"):
 		parsed = "#" + parsed
