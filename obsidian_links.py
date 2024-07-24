@@ -68,8 +68,7 @@ def get_wikilink_replacement(origin: File, destination_uri: str, text: str | Non
 
 		elif page is not None:
 			filename, _ = splitext( split(destination_file.src_uri)[1] )
-			text = page.title or filename # type: ignore
-			# page.title marked as of type 'weak_property | Unknown' instead of 'str | None'
+			text = filename
 
 
 	if not tooltip or (text and tooltip.lower() == text.lower()):
