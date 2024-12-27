@@ -36,12 +36,12 @@ def on_page_markdown(markdown: str, *, page: Page, **_):
 
 
 def get_wikilink_replacement(origin: File, destination_uri: str, text: str | None) -> str:
-	destination_uri, anchor = remove_anchor(destination_uri)
+	destination_uri, fragment = remove_fragment(destination_uri)
 	destination_file = get_file_from_filepath(destination_uri, origin)
 
 	if destination_file is not None:
 		destination_uri = destination_file.src_uri
-		href = quote(relpath(destination_uri, origin.src_uri + '/..').replace('\\', '/')) + parse_anchor(anchor)
+		href = quote(relpath(destination_uri, origin.src_uri + '/..').replace('\\', '/')) + parse_fragment(fragment)
 
 		page = destination_file.page
 
@@ -51,8 +51,8 @@ def get_wikilink_replacement(origin: File, destination_uri: str, text: str | Non
 		else:
 			tooltip = ''
 
-		if anchor:
-			tooltip += f" > {anchor[1:]}"
+		if fragment:
+			tooltip += f" > {fragment[1:]}"
 
 	else:
 		href = destination_uri
@@ -60,8 +60,8 @@ def get_wikilink_replacement(origin: File, destination_uri: str, text: str | Non
 		page = None
 
 	if not text:
-		if anchor is not None:
-			text = anchor[1:]
+		if fragment is not None:
+			text = fragment[1:]
 
 		elif destination_file is None:
 			text = destination_uri
@@ -78,17 +78,17 @@ def get_wikilink_replacement(origin: File, destination_uri: str, text: str | Non
 
 	return f"[{text or ""}]({href}{tooltip})"
 
-def remove_anchor(filepath: str) -> tuple[str, str | None]:
-	anchor_start = filepath.find("#")
-	if anchor_start == -1:
+def remove_fragment(filepath: str) -> tuple[str, str | None]:
+	fragment_start = filepath.find("#")
+	if fragment_start == -1:
 		return filepath, None
 
-	return filepath[:anchor_start], filepath[anchor_start:]
+	return filepath[:fragment_start], filepath[fragment_start:]
 
 def get_file_from_filepath(filepath: str, origin: File) -> File | None:
 	global available_files
 
-	filepath, _ = remove_anchor(filepath.strip())
+	filepath, _ = remove_fragment(filepath.strip())
 
 	if filepath == "":
 		filepath = origin.src_uri
@@ -108,19 +108,21 @@ def get_file_from_filepath(filepath: str, origin: File) -> File | None:
 
 	return None
 
-def parse_anchor(anchor: str | None) -> str:
-	if anchor is None or anchor == "":
+def parse_fragment(fragment: str | None) -> str:
+	if fragment is None or fragment == "":
 		return ""
 
-	parsed = unicodedata.normalize('NFD', anchor) \
+	parsed = unicodedata.normalize('NFD', fragment) \
 		.encode('ascii', 'ignore') \
 		.decode('utf-8') \
 		.lower() \
 		.replace('(', '') \
 		.replace(')', '') \
+		.replace('+', '') \
 		.replace(' - ', '-') \
 		.replace(' ', '-') \
-		.replace('--', '-')
+		.replace('--', '-') \
+		.strip( "-" )
 
 	if not parsed.startswith("#"):
 		parsed = "#" + parsed
