@@ -3,20 +3,23 @@ import regex
 from urllib.parse import quote
 from os.path import splitext, split, relpath
 
-from mkdocs.structure.pages import Page
-from mkdocs.structure.files import Files, File
-from mkdocs.config.defaults import MkDocsConfig
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+	from mkdocs.structure.pages import Page
+	from mkdocs.structure.files import Files, File
+	from mkdocs.config.defaults import MkDocsConfig
 
 WIKILINK_PATTERN = regex.compile(r"\[\[([^\]|]+)(?:\|([^\]]*))?\]\]")
 
-available_files: Files = None # type: ignore - will be initialized later
+available_files: 'Files' = None # type: ignore - will be initialized later
 
-def on_files(files: Files, config: MkDocsConfig) -> Files | None:
+def on_files(files: 'Files', config: 'MkDocsConfig') -> 'Files | None':
 	global available_files
 
 	available_files = files
 
-def on_page_markdown(markdown: str, *, page: Page, **_):
+def on_page_markdown(markdown: str, *, page: 'Page', **_):
 	global WIKILINK_PATTERN
 
 	wikilink_matches = WIKILINK_PATTERN.finditer(markdown)
@@ -35,7 +38,7 @@ def on_page_markdown(markdown: str, *, page: Page, **_):
 	return markdown
 
 
-def get_wikilink_replacement(origin: File, destination_uri: str, text: str | None) -> str:
+def get_wikilink_replacement(origin: 'File', destination_uri: str, text: str | None) -> str:
 	destination_uri, fragment = remove_fragment(destination_uri)
 	destination_file = get_file_from_filepath(destination_uri, origin)
 
@@ -85,7 +88,7 @@ def remove_fragment(filepath: str) -> tuple[str, str | None]:
 
 	return filepath[:fragment_start], filepath[fragment_start:]
 
-def get_file_from_filepath(filepath: str, origin: File) -> File | None:
+def get_file_from_filepath(filepath: str, origin: 'File') -> 'File | None':
 	global available_files
 
 	filepath, _ = remove_fragment(filepath.strip())

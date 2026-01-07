@@ -1,8 +1,12 @@
-from mkdocs.structure.files import Files
-from mkdocs.config.defaults import MkDocsConfig
 from os.path import split, splitext
 
-def on_files(files: Files, config: MkDocsConfig) -> Files | None:
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+	from mkdocs.structure.files import Files
+	from mkdocs.config.defaults import MkDocsConfig
+
+def on_files(files: 'Files', config: 'MkDocsConfig') -> 'Files | None':
 	for f in files:
 		if not f.is_documentation_page():
 			continue

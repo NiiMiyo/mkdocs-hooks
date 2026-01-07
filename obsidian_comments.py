@@ -1,10 +1,14 @@
 import regex
-from mkdocs.structure.pages import Page
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+	from mkdocs.structure.pages import Page
 
 
 COMMENT_PATTERN = regex.compile(r"%%[^%]%%")
 
-def on_page_markdown(markdown: str, *, page: Page, **_):
+def on_page_markdown(markdown: str, *, page: 'Page', **_):
 	remove_text: list[tuple[int, int]] = []
 
 	start = 0
