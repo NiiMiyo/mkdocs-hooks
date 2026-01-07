@@ -1,25 +1,20 @@
-import frontmatter
-
 from os.path import split, splitext
+from typing import TYPE_CHECKING
 
-from mkdocs.structure.files import Files
-from mkdocs.config.defaults import MkDocsConfig
+if TYPE_CHECKING:
+	from mkdocs.structure.pages import Page
+	from mkdocs.structure.files import Files
+	from mkdocs.config.defaults import MkDocsConfig
 
-def on_files(files: Files, config: MkDocsConfig) -> Files | None:
-	for file in files:
-		if not file.is_documentation_page():
-			continue
+def on_page_markdown( markdown: str, page: 'Page', config: "MkDocsConfig", files: "Files" ):
+	if ( not page.file.is_documentation_page() ) or ( page.meta.get( 'title', None ) is not None ):
+		return;
 
-		post = frontmatter.loads(file.content_string, encoding='utf-8-sig')
-		if post.get('title', None) is not None:
-			continue
+	dirpath, filename = split( page.file.src_uri )
+	filename_no_ext, file_ext = splitext( filename )
 
-		dirpath, filename = split(file.src_uri)
-		filename_no_ext, file_ext = splitext(filename)
+	if filename_no_ext == 'index' and file_ext.lower() == '.md':
+		_, page.title = split( dirpath ) #type: ignore
 
-		if filename_no_ext == 'index' and file_ext.lower() == '.md':
-			_, post['title'] = split(dirpath)
-		else:
-			post['title'] = filename_no_ext
-
-		file.content_string = frontmatter.dumps(post)
+	else:
+		page.title = filename_no_ext #type: ignore
